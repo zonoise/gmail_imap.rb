@@ -36,27 +36,6 @@ class GMail < Net::IMAP
     @_message_length[label]
   end
   
-  class MailList
-    include Enumerable
-    def initialize(gmail, label)
-      @gmail = gmail
-      @label = label
-      @len = @gmail.message_length(@label)
-      @count = 1
-    end
-    
-    def each
-      data = _next
-    end
-    
-    def _next
-      @gmail.select(@label)
-      data = @gmail.fetch(@count..1, "ALL")
-      @count.succ!
-      data
-    end
-  end  
-  
   private 
   def load_message_length(label)
     select(label)
@@ -80,8 +59,6 @@ class GMail < Net::IMAP
     end
     list.flatten
   end
-  
-
 end
 
 class Net::IMAP::MailboxList
@@ -93,45 +70,18 @@ class Net::IMAP::MailboxList
     attr.include? :Haschildren
   end
   
-  def message_length
-    
-  end
-
   def name_ja
     Net::IMAP.decode_utf7 name
   end
 end
 
 class Net::IMAP::FetchData
-  def to_mail
-    env = attr["ENVELOPE"]
-    line = []
-    line.push "Date: #{env.date}"
-    line.push "Subject: #{env.subject}"
-    to = env.to.collect{|m| "#{m.mailbox}@#{m.host}"}.join(',')
-    from = env.from.collect{|m| "#{m.mailbox}@#{m.host}"}.join(',')
-    line.push "From: #{from}"
-    line.push "To: #{to}"
-    unless env.cc.nil?
-      cc = env.cc.collect{|m| "#{m.mailbox}@#{m.host}"}.join(',')
-      line.push "Cc: #{cc}" 
-    end
-    unless env.bcc.nil?
-      bcc = env.bcc.collect{|m| "#{m.mailbox}@#{m.host}"}.join(',')
-      line.push "Bcc: #{bcc}" 
-    end
-
-    line.push ""
-    line.push "hoge"
-    line.join "\n"
+  def message_id
+    attr["ENVELOPE"].message_id
   end
   
   def utime
     Time.parse(attr["INTERNALDATE"])
-  end
-  
-  def body
-    
   end
 end
 
