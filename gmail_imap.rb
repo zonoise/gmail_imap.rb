@@ -83,5 +83,8 @@ class Net::IMAP::FetchData
   def utime
     Time.parse(attr["INTERNALDATE"])
   end
-end
 
+  def date
+    attr["ENVELOPE"].date
+  end
+end

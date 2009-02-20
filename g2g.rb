@@ -1,24 +1,11 @@
 #!/usr/local/bin/ruby
 
 require 'gmail_imap'
-require 'readline'
 
-
-print "input your old gmail account\n> "
-src_user = STDIN.readline.chomp
-print "input password\n> "
-system "stty -echo"
-src_password = STDIN.readline.chomp
-system "stty echo"
-print "\n"
-
-print "input your new gmail account\n> "
-dest_user = STDIN.readline.chomp
-print "input password\n> "
-system "stty -echo"
-dest_password = STDIN.readline.chomp
-system "stty echo"
-print "\n"
+src_user = ''
+src_password = ''
+dest_user = ''
+dest_password = ''
 
 begin
   src_gmail = GMail.new(src_user, src_password)
@@ -48,36 +35,39 @@ src_gmail.labels.each do |dir|
     exist_mails = dest_gmail.mails(dir.name).collect do |mail|
       mail.message_id
     end
-
-    src_gmail.mails(dir.name).each do |mail|
+    puts "exist mail loaded; #{exist_mails.length} mails."
+    dest_gmail.select(dir.name)
+    src_gmail.mails(dir.name).each do |mail|      
       unless exist_mails.include? mail.message_id
         retry_flag = true
-        retrying_count = 0
-        while(retry_flag && retrying_count < retry_max)
+        retry_count = 0
+        while(retry_flag && retry_count < retry_max)
           begin
             retry_flag = false
             body = src_gmail.body(dir.name, mail)
             dest_gmail.append(dir.name, body, mail.attr["FLAGS"], mail.utime)
             sleep(1)
-            count[0] = count[0].succ
-            print 'o'
           rescue
             retry_flag = true
-            retrying_count = retrying_count.succ
+            retry_count = retry_count.succ
           end
         end
-        if(retrying_count >= retry_max)
+        if retry_flag
           print 'x'
           count[2] = count[2].succ
+        else
+          print 'o'
+          count[0] = count[0].succ
         end
       else
         print 's'
         count[1] = count[1].succ
       end
+      $stdout.flush
     end
-    puts "  copy finished; copied: #{count[0]}, skipped: #{count[1]}, errored: #{count[2]}"
+    puts "  copy finished; copied: #{count[0]}, skipped: #{count[1]}, failed: #{count[2]}"
   end
 end
 
-src_gmail.close
-dest_gmail.close
+#src_gmail.close
+#dest_gmail.close
