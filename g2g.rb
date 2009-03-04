@@ -76,7 +76,6 @@ src_gmail.labels.each do |dir|
         $stdout.flush
       end
     end
-    p change_flag
     change_flag.to_a.each do |changes|
       dest_gmail.uid_store(changes[1], "FLAGS", changes[0])
     end
