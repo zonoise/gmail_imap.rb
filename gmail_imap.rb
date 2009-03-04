@@ -22,13 +22,20 @@ class GMail < Net::IMAP
   def mails(label)
     #GMail::MailList.new(self, label)
     select(label)
-    ret = fetch(1..-1, "ALL")
+    ret = fetch(1..-1, ["ENVELOPE","INTERNALDATE","FLAGS","UID"])
     ret.nil? ? [] : ret
   end
 
   def body(label, mail)
     select(label)
     fetch(mail.seqno, "RFC822")[0].attr["RFC822"]
+  end
+
+  def mails_body(label, index = 0, size = 20)
+    select(label)
+    start = (index * size).succ
+    finish = size * index.succ
+    fetch(start..finish, ["RFC822","ENVELOPE","INTERNALDATE","FLAGS","UID"])
   end
   
   def message_length(label)
@@ -76,6 +83,10 @@ class Net::IMAP::MailboxList
 end
 
 class Net::IMAP::FetchData
+  def uid
+    attr["UID"]
+  end
+
   def message_id
     attr["ENVELOPE"].message_id
   end
@@ -86,5 +97,13 @@ class Net::IMAP::FetchData
 
   def date
     attr["ENVELOPE"].date
+  end
+
+  def flags
+    attr["FLAGS"]
+  end
+
+  def to_mail
+    attr["RFC822"]
   end
 end
